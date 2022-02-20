@@ -6,5 +6,3 @@ in the zip file diagrams.zip, there are the persistence diagrams of the subjects
 The file discrete_dynamical_model_analysis.py provide the code related to the result of the application on the orbit recognition.
 
 The file shape_segmentation_analysis.py provide the code related to the results on the shape segmentation experiment.
-
-The script oasis_svm.py provide various example of svm classification applied to persistence diagrams. In particular are considered four types of kernel for persistence diagrams, respectively:
