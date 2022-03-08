@@ -3,6 +3,8 @@ import gudhi as gh
 import pandas as pd
 import time
 import os
+# import matplotlib.pyplot as plt
+
 
 from scipy.stats import multivariate_normal
 from sklearn.model_selection import train_test_split
