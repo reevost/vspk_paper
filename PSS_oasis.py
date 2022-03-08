@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import time
+import os
 
 from scipy.stats import multivariate_normal
 from sklearn.model_selection import train_test_split
@@ -15,6 +16,7 @@ vsk_flag = True # for Variably Scaled Persistence kernel version
 np.random.seed(42)
 program = np.arange(10)
 d = 1  # dimension of the feature
+cwd = os.getcwd()  # get the working directory
 
 # define the possible psi for variable scaled persistence kernel framework
 center_of_mass = lambda diag: np.sum(diag, axis=0)/len(diag)
@@ -34,7 +36,7 @@ main = df_y.filter('y')
 for dim in range(1, 3):  # decide what dimension include, in this case 1 and 2.
     new_column = []
     for subj in main.index:
-        p_d = np.load(r'/Users/federicolot/PycharmProjects/Unipd/TESI/diagrams/%s_d%s.npy' % (subj, dim))
+        p_d = np.load(r'%s/diagrams/%s_d%s.npy' % (cwd, subj, dim))
         p_d_10 = p_d[np.argsort(p_d[:, 1]-p_d[:, 0])[::-1][:10]]  # take only the 10 feature with higher persistent
         p_d_11 = p_d[np.argsort(p_d[:, 1]-p_d[:, 0])[::-1][10:]]  # all the features without the 10 with the gretest persistence
         if vsk_flag and dim == 1:
