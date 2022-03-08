@@ -1,8 +1,8 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import gudhi as gh
 import pandas as pd
 import time
+import os
 
 from scipy.stats import multivariate_normal
 from sklearn.model_selection import train_test_split
@@ -12,18 +12,12 @@ from sklearn.metrics import confusion_matrix, f1_score, accuracy_score
 from scipy.spatial import distance_matrix
 from sklearn.model_selection import KFold
 
-flag = False
-vsk_flag = True
-plot_flag = False
-psi_flag = False
+vsk_flag = True # for Variably Scaled Persistence kernel version
+# vsk_flag = False # for original kernel version
+np.random.seed(42)
 program = np.arange(10)
-d = 1
-
-# define statistic function for confusion matrix (in binary classification framework)
-# f1_score = lambda c_m:  2*c_m[1][1] / (2 * c_m[1][1] + c_m[0][1] + c_m[1][0])
-# precision = lambda c_m:  c_m[1][1] / (c_m[1][1] + c_m[0][1])
-# recall = lambda c_m:  c_m[1][1] / (c_m[1][1] + c_m[1][0])
-# accuracy = lambda c_m:  (c_m[0][0] + c_m[1][1]) / (c_m[0][0] + c_m[0][1] + c_m[1][0] + c_m[1][1])
+d = 1  # dimension of the feature
+cwd = os.getcwd()  # get the working directory
 
 # define the possible psi for variable scaled persistence kernel framework
 center_of_mass = lambda diag: np.sum(diag, axis=0)/len(diag)
@@ -33,13 +27,12 @@ center_of_inv_persistence = lambda diag: np.sum(np.array([diag[ii]/(diag[ii][1]-
 
 tic = time.perf_counter()
 # --------------------------------------------- PREPROCESSING ---------------------------------------------------
-# Generate the dynamical system
-
-np.random.seed(7)
-starting_points = np.random.random((100, 2))
 coefficient_r_list = [2.5, 3.5, 4.0, 4.1, 4.3]
 
-dynamic_df = pd.DataFrame(columns=["starting point", "dynamic points"])
+# Generate the dynamical system
+# np.random.seed(7)
+# starting_points = np.random.random((100, 2))
+# dynamic_df = pd.DataFrame(columns=["starting point", "dynamic points"])
 # r_ind = 4  # parameter of the system
 # r = coefficient_r_list[r_ind]
 #
@@ -53,12 +46,11 @@ dynamic_df = pd.DataFrame(columns=["starting point", "dynamic points"])
 #         dynamic_point_list += [[x_n_plus_1, y_n_plus_1]]
 #     dynamic_df.loc[i] = [x_0_y_0, np.array(dynamic_point_list)]
 #
-# if not plot_flag:
-#     for i in np.arange(5):
-#         fig = plt.figure(i+1)
-#         ax = fig.add_subplot()
-#         ax.scatter(dynamic_df["dynamic points"][i][:, 0], dynamic_df["dynamic points"][i][:, 1])
-#         plt.show()
+# for i in np.arange(5):
+#     fig = plt.figure(i+1)
+#     ax = fig.add_subplot()
+#     ax.scatter(dynamic_df["dynamic points"][i][:, 0], dynamic_df["dynamic points"][i][:, 1])
+#     plt.show()
 #
 #
 # # BUILD PERSISTENCE DIAGRAMS (AND SAVE THEM)
@@ -81,7 +73,7 @@ dynamic_df = pd.DataFrame(columns=["starting point", "dynamic points"])
 #     for dp in persistence_diagrams:
 #         persistence_diagrams_savable += [[dp[0], dp[1][0], dp[1][1]]]
 #     print("len of pd", len(persistence_diagrams_savable))
-#     np.save(r'/Users/federicolot/PycharmProjects/Unipd/TESI/dynamic_diagrams_2/%s_d%s.npy' % (r_ind, i), np.array(persistence_diagrams_savable))
+#     np.save(r'%s/dynamic_diagrams_2/%s_d%s.npy' % (cwd, r_ind, i), np.array(persistence_diagrams_savable))
 
 # LOAD OF PERSISTENCE DIAGRAMS
 main = pd.DataFrame(columns=['persistence diagram points', 'y'])
@@ -90,20 +82,15 @@ new_column_pd = []
 new_column_y = []
 for jnd in np.arange(len(coefficient_r_list)):
     for i in np.arange(50):
-        p_d = np.load(r'/Users/federicolot/PycharmProjects/Unipd/TESI/dynamic_diagrams/%s_d%s.npy' % (jnd, i))  # imported the full pd
+        p_d = np.load(r'%s/dynamic_diagrams/%s_d%s.npy' % (cwd, jnd, i))  # imported the full pd
         p_d_1 = p_d[np.nonzero(p_d[:, 0])][:, 1:]  # selecting only the 1-dim features
-        p_d_2 = p_d_1[:2, :]
-        # p_d_10 = p_d_1[:10, :]
+        p_d_10 = p_d_1[:10, :]  # take only the 10 feature with higher persistent
 
         if vsk_flag:
             # add center of mass
-            # p_d_1 = np.concatenate((p_d_1, [center_of_persistence(p_d_1)]), axis=0)
-            p_d_2 = np.concatenate((p_d_2, [center_of_persistence(p_d_2)]), axis=0)
-            # p_d_2_var = np.concatenate((p_d_2, [center_of_persistence(p_d_1[2:, :])]), axis=0)
-            # p_d_10 = np.concatenate((p_d_10, [center_of_persistence(p_d_10)]), axis=0)
-            # p_d_10_var = np.concatenate((p_d_10, [center_of_persistence(p_d_1[10:, :])]), axis=0)
-        # new_column_pd += [p_d_10_var]
-        new_column_pd += [p_d_2]
+            p_d = np.concatenate((p_d_10, [center_of_persistence(p_d_10)]), axis=0)  # Psi_a
+            # p_d = np.concatenate((p_d_10, [center_of_persistence(p_d_1[10:, :])]), axis=0)  # Psi_rho
+        new_column_pd += [p_d]
         new_column_y += [jnd]
 
 main['persistence diagram points'] = new_column_pd
@@ -135,11 +122,9 @@ y3 = main3['y']
 X4 = main4['persistence diagram points']
 y4 = main4['y']
 
-print(main)
-
 report = {'t_train': [], 't_val': [], 'f1_score': [], 'accuracy': []}
 for rand_state in program:
-    persistence_kernel = 'PSWK'
+    persistence_kernel = 'PSWK'  # chosen kernel  PSWK - PWGK - PSSK
 
     train_index0, test_index0 = train_test_split(y0.index, test_size=0.3, random_state=rand_state)
     train_index1, test_index1 = train_test_split(y1.index, test_size=0.3, random_state=rand_state)
@@ -229,27 +214,6 @@ for rand_state in program:
 
     elif persistence_kernel == 'PWGK':
         print('====================== Persistence Weighted Gaussian Kernel =======================')
-
-
-        # def persistance_weighted_linear_kernel(F, G, Cp_w, m_rff, rho):  # F, G are arrays of the points of persistance diagrams
-        #     # evaluate the kernel, supposing there is no eternal hole
-        #     w_arc = lambda x: np.arctan(Cp_w[0] * (pers(x)) ** Cp_w[1])
-        #     # gaussian_matrix = np.exp(-eps*distance_matrix(F, G)**2)  ---> eps = 1/(2*sigma**2)  computable O(m**2*n**2) HIGH
-        #     # using random fourier features
-        #     N = 2  # len(F[0]) not need to compute really
-        #     w_F_ = np.array([[w_arc(x)] for x in F])
-        #     w_F = np.vstack((w_F_, w_F_))
-        #     w_G_ = np.array([[w_arc(x)] for x in G])
-        #     w_G = np.vstack((w_G_, w_G_))
-        #     z = np.random.multivariate_normal(mean=np.zeros(N), cov=np.eye(N)/rho**2, size=(m_rff, ))
-        #     # exp_B_F = np.exp(+1j * z @ F.T) @ w_F_  # can return a complex value
-        #     # exp_B_G = np.exp(-1j * z @ G.T) @ w_G_
-        #     B_F = np.hstack((np.cos(z @ F.T)/np.sqrt(len(F)), np.sin(z @ F.T)/np.sqrt(len(F)))) @ w_F
-        #     B_G = np.hstack((np.cos(z @ G.T)/np.sqrt(len(G)), np.sin(z @ G.T)/np.sqrt(len(G)))) @ w_G
-        #     # print("exp:", 1/m_rff*exp_B_F.T@exp_B_G)
-        #     # print("cos:", 1/m_rff*B_F.T@B_G)
-        #     return 1/m_rff*B_F.T@B_G  # or *sum(B_F*B_G)
-        #     # don't compute the "internal" gaussian kernel but directly k(F,G)
 
 
         def persistance_weighted_gaussian_kernel(F, G, _Cp_w, _rho, _tau):
@@ -390,24 +354,7 @@ for rand_state in program:
         def PSWK(XF, XG):  # XF and XG are array of persistence diagrams
             global M, eta
             return np.array([[persistance_sliced_wasserstein_approximated_kernel(D1, D2, _M=M, _eta=eta) for D2 in XG] for D1 in XF])
-
-        # full persistence diagram
-        # if vsk_flag:
-        #     full50sp_matrix = np.load(r'/Users/federicolot/PycharmProjects/Unipd/TESI/dynamic_diagrams/full50_vsk_matrix.npy')  # 41002 seconds to evaluate
-        # else:
-        #     full50sp_matrix = np.load(r'/Users/federicolot/PycharmProjects/Unipd/TESI/dynamic_diagrams/full50_matrix.npy')  # 36493 seconds to evaluate
-
-        # best 10 persistence diagram
-        # if vsk_flag:
-        #     full50sp_matrix = np.load(r'/Users/federicolot/PycharmProjects/Unipd/TESI/dynamic_diagrams/10_50_vsk_matrix.npy')  # 29 seconds to evaluate
-        # else:
-        #     full50sp_matrix = np.load(r'/Users/federicolot/PycharmProjects/Unipd/TESI/dynamic_diagrams/10_50_matrix.npy')  # 26 seconds to evaluate
-
-        # best 10 persistence diagram with variant
-        # if vsk_flag:
-        #     full50sp_matrix = np.load(r'/Users/federicolot/PycharmProjects/Unipd/TESI/dynamic_diagrams/10_50_vsk_var_matrix.npy')  # 29 seconds to evaluate
-        # else:
-        #     full50sp_matrix = np.load(r'/Users/federicolot/PycharmProjects/Unipd/TESI/dynamic_diagrams/10_50_matrix.npy')  # 26 seconds to evaluate
+        
 
         # Training
         C_values = [0.001, 0.01, 0.1, 1, 10, 100, 1000]
@@ -418,18 +365,13 @@ for rand_state in program:
         progress = 0
         metric_output = [0 for a in PSWK_param]
         for train_index, test_index in kf.split(X_balanced_train):
-            # X_train_index, X_test_index = X_balanced_train.index[train_index], X_balanced_train.index[test_index]
-            # y_train, y_test = y_balanced_train[y_balanced_train.index[train_index]], y_balanced_train[
-            #     y_balanced_train.index[test_index]]
             X_train, X_test = X_balanced_train[X_balanced_train.index[train_index]], X_balanced_train[
                 X_balanced_train.index[test_index]]
             y_train, y_test = y_balanced_train[y_balanced_train.index[train_index]], y_balanced_train[
                 y_balanced_train.index[test_index]]
 
             # evaluation of the baseline of the kernel matrix
-            # SW_train = full50sp_matrix[X_train_index, :][:, X_train_index]
             SW_train = PSWM(X_train, X_train, M)
-            # SW_test_train = full50sp_matrix[X_test_index, :][:, X_train_index]
             SW_test_train = PSWM(X_test, X_train, M)
 
             flat = np.sort(np.matrix.flatten(SW_train), kind='mergesort')
@@ -468,8 +410,6 @@ for rand_state in program:
         eta = PSWK_param[best_mean_ind][1]
 
         print("best eta: ", eta, '\nbest C: ', best_C)
-        # gram_SW_balanced_train = np.exp(- full50sp_matrix[balanced_train_index, :][:, balanced_train_index] / (2 * eta**2))
-        # classifier = SVC(kernel='precomputed', C=best_C, cache_size=1000)
         classifier = SVC(kernel=PSWK, C=best_C, cache_size=1000)
         classifier.fit(X_balanced_train, y_balanced_train)
 
