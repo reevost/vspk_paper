@@ -24,9 +24,9 @@ Code runs with python 3.8.x. The libraries needed are:
 #### Launch
 
 To run the code enter the following command
-
-python filename.py
-
+```
+$ python filename.py
+```
 where filename can be chosen between 
 
 - SW_oasis
