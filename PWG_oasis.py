@@ -1,9 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-# from ripser import ripser
-from persim import plot_diagrams
-# from ripser import Rips
-from persim import PersistenceImager
 import pandas as pd
 import time
 
@@ -11,21 +6,15 @@ from scipy.stats import multivariate_normal
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.metrics import classification_report, mean_squared_error
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, f1_score, accuracy_score
 from scipy.spatial import distance_matrix
 from sklearn.model_selection import KFold
 
-vsk_flag = True
-psi_flag = False
+vsk_flag = True # for Variably Scaled Persistence kernel version
+# vsk_flag = False # for original kernel version
 np.random.seed(42)
-program = np.arange(10)  # np.random.randint(1000, size=2)
+program = np.arange(10)
 d = 1  # dimension of the feature
-
-# define statistic function for confusion matrix (in binary classification framework)
-f1_score = lambda c_m:  2*c_m[1][1] / (2 * c_m[1][1] + c_m[0][1] + c_m[1][0])
-precision = lambda c_m:  c_m[1][1] / (c_m[1][1] + c_m[0][1])
-recall = lambda c_m:  c_m[1][1] / (c_m[1][1] + c_m[1][0])
-accuracy = lambda c_m:  (c_m[0][0] + c_m[1][1]) / (c_m[0][0] + c_m[0][1] + c_m[1][0] + c_m[1][1])
 
 # define the possible psi for variable scaled persistence kernel framework
 center_of_mass = lambda diag: np.sum(diag, axis=0)/len(diag)
@@ -47,71 +36,16 @@ for dim in range(1, 3):  # decide what dimension include, in this case 1 and 2.
     for subj in main.index:
         p_d = np.load(r'/Users/federicolot/PycharmProjects/Unipd/TESI/diagrams/%s_d%s.npy' % (subj, dim))
         p_d_10 = p_d[np.argsort(p_d[:, 1]-p_d[:, 0])[::-1][:10]]  # take only the 10 feature with higher persistent
-        p_d_11 = p_d[np.argsort(p_d[:, 1]-p_d[:, 0])[::-1][10:]]
+        p_d_11 = p_d[np.argsort(p_d[:, 1]-p_d[:, 0])[::-1][10:]]  # all the features without the 10 with the gretest persistence
         if vsk_flag and dim == 1:
             # add center of mass
-            # p_d = np.concatenate((p_d, [center_of_persistence(p_d)]), axis=0)
-            p_d_10 = np.concatenate((p_d_10, [center_of_persistence(p_d_11)]), axis=0)
-        new_column += [p_d_10]
+            # p_d = np.concatenate((p_d, [center_of_persistence(p_d)]), axis=0) # Psi_a
+            p_d = np.concatenate((p_d_10, [center_of_persistence(p_d_11)]), axis=0) #Psi_rho
+        new_column += [p_d]
     main['d%s' % dim] = new_column
-
-
-# test the discriminative power of psi(D)
-if psi_flag:
-    cop = []
-    for sub in main.index:
-        pers_diag = np.load(r'/Users/federicolot/PycharmProjects/Unipd/TESI/diagrams/%s_d2.npy' % sub)
-        cop += [center_of_persistence(pers_diag)]
-
-    # ANALYSIS OF CENTER OF PERSISTENCE IMPACT ON CLASSIFICATION
-    main_cop = main
-    main_cop['c_o_p'] = cop
-    cop = np.array(cop)
-    main_cop = main_cop.drop(['d2', 'd1'], axis=1)
-    print(main_cop)
-
-    y_cop = main_cop['y']
-    X_cop = cop
-
-    X_cop_train, X_cop_test, y_cop_train, y_cop_test = train_test_split(X_cop, y_cop, test_size=0.3, random_state=7)
-
-    C_range = np.logspace(-4, 7, 13)
-    gamma_range = np.logspace(-8, 3, 13)
-    param_grid = [(c, g) for c in C_range for g in gamma_range]
-    kf = KFold(n_splits=5, shuffle=True, random_state=7)
-    best_C, best_gamma, best_mean, q = 1, 1, 0, 0
-    for param in param_grid:
-        C, gamma = param[0], param[1]
-        metric_output = []
-        for train_index, test_index in kf.split(X_cop_train):
-            X_train, X_test = X_cop_train[train_index], X_cop_train[test_index]
-            y_train, y_test = y_cop_train[train_index], y_cop_train[test_index]
-            clf = SVC(kernel='rbf', C=C, gamma=gamma, cache_size=1000)
-            clf.fit(X_train, y_train)
-            y_pred = clf.predict(X_test)
-            cm = confusion_matrix(y_test, y_pred, labels=[0, 1])
-            f1s = f1_score(cm)
-            # as loss function can be used also the rmse
-            # root_mse = np.sqrt(mean_squared_error(y_test, y_pred))
-            # metric_output.append(root_mse)
-            metric_output.append(f1s)
-        mean = np.mean(metric_output)
-        if mean > best_mean:
-            best_mean = mean
-            best_gamma = gamma
-            best_C = C
-        q += 1
-        print('done %d/%d' % (q, len(param_grid)))
-    print("The best parameters are C = %f, and gamma = %f" % (best_C, best_gamma))
-
-    clf = SVC(C=best_C, kernel='rbf', gamma=best_gamma)
-    clf.fit(X_cop_train, y_cop_train)
-    y_pred = clf.predict(X_cop_test)
-    print(classification_report(y_cop_test, y_pred))
 
 toc_mid = time.perf_counter()
 print("\ntotal time after diagrams evaluation and data preprocessing: %f seconds" % (toc_mid - tic))
-
 
 # ----------------------------------------- END OF PREPROCESSING ---------------------------------------------
 
@@ -212,8 +146,7 @@ for rand_state in program:
             clf = SVC(kernel=PWGK, C=C, cache_size=1000)
             clf.fit(X_train, y_train)
             y_pred = clf.predict(X_test)
-            cm = confusion_matrix(y_test, y_pred, labels=[0, 1])
-            f1s = f1_score(cm)
+            f1s = f1_score(y_test, y_pred, average='macro')
             # as loss function can be used also the rmse
             # root_mse = np.sqrt(mean_squared_error(y_test, y_pred))
             # metric_output.append(root_mse)
@@ -244,8 +177,8 @@ for rand_state in program:
 
     report['t_train'] = report['t_train'] + [toc_mid3 - toc_mid2]
     report['t_val'] = report['t_val'] + [toc_mid4 - toc_mid3]
-    report['f1_score'] = report['f1_score'] + [f1_score(confusion_matrix(y_balanced_test, y_pred, labels=[0, 1]))]
-    report['accuracy'] = report['accuracy'] + [accuracy(confusion_matrix(y_balanced_test, y_pred, labels=[0, 1]))]
+    report['f1_score'] = report['f1_score'] + [f1_score(y_balanced_test, y_pred, average='macro')]
+    report['accuracy'] = report['accuracy'] + [accuracy_score(y_balanced_test, y_pred)]
 
 # print(report)
 print('-----------------------------------------------------------------------------------')
