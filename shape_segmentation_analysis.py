@@ -1,10 +1,9 @@
 import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
 import gudhi as gh
 import pandas as pd
 import time
-import potpourri3d as pp3d
+import os
+# import matplotlib.pyplot as plt
 
 from scipy.stats import multivariate_normal
 from sklearn.model_selection import train_test_split
@@ -14,18 +13,12 @@ from sklearn.metrics import confusion_matrix, f1_score, accuracy_score
 from scipy.spatial import distance_matrix
 from sklearn.model_selection import KFold
 
-flag = False
-vsk_flag = True
-plot_flag = False
-psi_flag = False
+vsk_flag = True # for Variably Scaled Persistence kernel version
+# vsk_flag = False # for original kernel version
+np.random.seed(42)
 program = np.arange(10)
-d = 1
-
-# define statistic function for confusion matrix (in binary classification framework)
-# f1_score = lambda c_m:  2*c_m[1][1] / (2 * c_m[1][1] + c_m[0][1] + c_m[1][0])
-# precision = lambda c_m:  c_m[1][1] / (c_m[1][1] + c_m[0][1])
-# recall = lambda c_m:  c_m[1][1] / (c_m[1][1] + c_m[1][0])
-# accuracy = lambda c_m:  (c_m[0][0] + c_m[1][1]) / (c_m[0][0] + c_m[0][1] + c_m[1][0] + c_m[1][1])
+d = 1  # dimension of the feature
+cwd = os.getcwd()  # get the working directory
 
 # define the possible psi for variable scaled persistence kernel framework
 center_of_mass = lambda diag: np.sum(diag, axis=0) / len(diag)
@@ -45,13 +38,13 @@ category = "Bird"
 
 df_category = pd.DataFrame(columns=["centroid", "persistence diagrams", "label"])
 # SHOW IMAGE
-# for i in np.arange(1):  # we take the first 5 elements for every kind of category
+# for i in np.arange(5):  # we take the first 5 elements for every kind of category
 #     j = i + subjects_dict[category][0]
 #     j = 241
-#     f_off = open(fr'/Users/federicolot/PycharmProjects/Unipd/TESI/MeshsegBenchmark/data/off/{j}.off')
+#     f_off = open(fr'{cwd}/MeshsegBenchmark/data/off/{j}.off')
 #     list_off = f_off.readlines()
 #     f_off.close()
-#     f_seg = open(fr'/Users/federicolot/PycharmProjects/Unipd/TESI/MeshsegBenchmark/data/seg/Benchmark/{j}/{j}_0.seg')
+#     f_seg = open(fr'{cwd}/MeshsegBenchmark/data/seg/Benchmark/{j}/{j}_0.seg')
 #     list_seg = f_seg.readlines()
 #     f_seg.close()
 #     list_number_seg = [int(a[:-1]) for a in list_seg]
@@ -84,10 +77,10 @@ df_category = pd.DataFrame(columns=["centroid", "persistence diagrams", "label"]
 # for i in np.arange(5):  # we take the first 5 elements for every kind of category
 #     print("starting", i+1, "out of 5 in", time.perf_counter()-tic)
 #     j = i + subjects_dict[category]
-#     f_off = open(fr'/Users/federicolot/PycharmProjects/Unipd/TESI/MeshsegBenchmark/data/off/{j}.off')
+#     f_off = open(fr'{cwd}/MeshsegBenchmark/data/off/{j}.off')
 #     list_off = f_off.readlines()
 #     f_off.close()
-#     f_seg = open(fr'/Users/federicolot/PycharmProjects/Unipd/TESI/MeshsegBenchmark/data/seg/Benchmark/{j}/{j}_0.seg')
+#     f_seg = open(fr'{cwd}/MeshsegBenchmark/data/seg/Benchmark/{j}/{j}_0.seg')
 #     list_seg = f_seg.readlines()
 #     f_seg.close()
 #     list_number_seg = [int(a[:-1]) for a in list_seg]
@@ -131,12 +124,12 @@ df_category = pd.DataFrame(columns=["centroid", "persistence diagrams", "label"]
 #
 # print(df_category)
 # print(time.perf_counter()-tic)
-# df_category.to_csv(fr'/Users/federicolot/PycharmProjects/Unipd/TESI/shape_segmentation/{category}.csv')
+# df_category.to_csv(fr'{cwd}/shape_segmentation/{category}.csv')
 
 # LOAD OF CSV FILE
-main = pd.read_csv(fr'/Users/federicolot/PycharmProjects/Unipd/TESI/shape_segmentation/{category}.csv')
+main = pd.read_csv(fr'{cwd}/shape_segmentation/{category}.csv')
 
-# STORE THE PERSISTENCE DIAGRAMS
+# STORE THE PERSISTENCE DIAGRAMS AS NUMPY FILES (ONLY IF GENERATE THE PD MANUALLY)
 # for index in main.index:
 #     # restore the pd
 #     p_d = main["persistence diagrams"][index].strip('][').split('), (')
@@ -148,25 +141,20 @@ main = pd.read_csv(fr'/Users/federicolot/PycharmProjects/Unipd/TESI/shape_segmen
 #     if vsk_flag:
 #         # add center of mass
 #         p_d_1 = np.concatenate((p_d, [center_of_persistence(p_d)]), axis=0)
-#         np.save(fr'/Users/federicolot/PycharmProjects/Unipd/TESI/shape_segmentation/{category}/vsk_pd_{index}.npy', p_d_1)
+#         np.save(fr'{cwd}/shape_segmentation/{category}/vsk_pd_{index}.npy', p_d_1)
 #     else:
-#         np.load(fr'/Users/federicolot/PycharmProjects/Unipd/TESI/shape_segmentation/{category}/pd_{index}.npy')
+#         np.load(fr'{cwd}/shape_segmentation/{category}/pd_{index}.npy')
 #         # p_d = np.where(p_d > 6, 6, p_d)  # since all images are in the box [-1, 1]^3, we consider essential holes as holes with persistence 6 (the geodetic distance of two opposite points in the box)
 #         p_d = np.array([c_p for c_p in p_d if c_p[1] < 6])  # remove essential holes
-#         np.save(fr'/Users/federicolot/PycharmProjects/Unipd/TESI/shape_segmentation/{category}/pd_{index}.npy', p_d)
+#         np.save(fr'{cwd}/shape_segmentation/{category}/pd_{index}.npy', p_d)
 
 # LOAD PERSISTENCE DIAGRAMS
-# apply here the idea above to remove the essential holes
 new_column_pd = []
 for i in np.arange(len(main.index)):
     if vsk_flag:
-        p_d = np.load(fr'/Users/federicolot/PycharmProjects/Unipd/TESI/shape_segmentation/{category}/vsk_pd_{i}.npy')  # imported the vsk pd
-        # p_d_n = np.array([c_p for c_p in p_d if c_p[1] < 6])  # remove essential holes
-        # np.save(fr'/Users/federicolot/PycharmProjects/Unipd/TESI/shape_segmentation/{category}/vsk_pd_{i}.npy', p_d_n)
+        p_d = np.load(fr'{cwd}/shape_segmentation/{category}/vsk_pd_{i}.npy')  # imported the vsk pd
     else:
-        p_d = np.load(fr'/Users/federicolot/PycharmProjects/Unipd/TESI/shape_segmentation/{category}/pd_{i}.npy')  # imported the pd
-        # p_d_n = np.array([c_p for c_p in p_d if c_p[1] < 6])  # remove essential holes
-        # np.save(fr'/Users/federicolot/PycharmProjects/Unipd/TESI/shape_segmentation/{category}/pd_{i}.npy', p_d_n)
+        p_d = np.load(fr'{cwd}/shape_segmentation/{category}/pd_{i}.npy')  # imported the pd
 
     new_column_pd += [p_d]
 
@@ -195,7 +183,7 @@ print("points in main:", len(main))
 
 report = {'t_train': [], 't_val': [], 'f1_score': [], 'accuracy': []}
 for rand_state in program:
-    persistence_kernel = 'PWGK'
+    persistence_kernel = 'PSWK'  # chosen kernel  PSWK - PWGK - PSSK
 
     balanced_train_index, balanced_test_index = train_test_split(y.index, test_size=0.3, random_state=rand_state,
                                                                  stratify=y)
@@ -282,27 +270,6 @@ for rand_state in program:
 
     elif persistence_kernel == 'PWGK':
         print('====================== Persistence Weighted Gaussian Kernel =======================')
-
-
-        # def persistance_weighted_linear_kernel(F, G, Cp_w, m_rff, rho):  # F, G are arrays of the points of persistance diagrams
-        #     # evaluate the kernel, supposing there is no eternal hole
-        #     w_arc = lambda x: np.arctan(Cp_w[0] * (pers(x)) ** Cp_w[1])
-        #     # gaussian_matrix = np.exp(-eps*distance_matrix(F, G)**2)  ---> eps = 1/(2*sigma**2)  computable O(m**2*n**2) HIGH
-        #     # using random fourier features
-        #     N = 2  # len(F[0]) not need to compute really
-        #     w_F_ = np.array([[w_arc(x)] for x in F])
-        #     w_F = np.vstack((w_F_, w_F_))
-        #     w_G_ = np.array([[w_arc(x)] for x in G])
-        #     w_G = np.vstack((w_G_, w_G_))
-        #     z = np.random.multivariate_normal(mean=np.zeros(N), cov=np.eye(N)/rho**2, size=(m_rff, ))
-        #     # exp_B_F = np.exp(+1j * z @ F.T) @ w_F_  # can return a complex value
-        #     # exp_B_G = np.exp(-1j * z @ G.T) @ w_G_
-        #     B_F = np.hstack((np.cos(z @ F.T)/np.sqrt(len(F)), np.sin(z @ F.T)/np.sqrt(len(F)))) @ w_F
-        #     B_G = np.hstack((np.cos(z @ G.T)/np.sqrt(len(G)), np.sin(z @ G.T)/np.sqrt(len(G)))) @ w_G
-        #     # print("exp:", 1/m_rff*exp_B_F.T@exp_B_G)
-        #     # print("cos:", 1/m_rff*B_F.T@B_G)
-        #     return 1/m_rff*B_F.T@B_G  # or *sum(B_F*B_G)
-        #     # don't compute the "internal" gaussian kernel but directly k(F,G)
 
 
         def persistance_weighted_gaussian_kernel(F, G, _Cp_w, _rho, _tau):
@@ -460,18 +427,13 @@ for rand_state in program:
         progress = 0
         metric_output = [0 for a in PSWK_param]
         for train_index, test_index in kf.split(X_balanced_train):
-            # X_train_index, X_test_index = X_balanced_train.index[train_index], X_balanced_train.index[test_index]
-            # y_train, y_test = y_balanced_train[y_balanced_train.index[train_index]], y_balanced_train[
-            #     y_balanced_train.index[test_index]]
             X_train, X_test = X_balanced_train[X_balanced_train.index[train_index]], X_balanced_train[
                 X_balanced_train.index[test_index]]
             y_train, y_test = y_balanced_train[y_balanced_train.index[train_index]], y_balanced_train[
                 y_balanced_train.index[test_index]]
 
             # evaluation of the baseline of the kernel matrix
-            # SW_train = full50sp_matrix[X_train_index, :][:, X_train_index]
             SW_train = PSWM(X_train, X_train, M)
-            # SW_test_train = full50sp_matrix[X_test_index, :][:, X_train_index]
             SW_test_train = PSWM(X_test, X_train, M)
 
             flat = np.sort(np.matrix.flatten(SW_train), kind='mergesort')
@@ -510,8 +472,6 @@ for rand_state in program:
         eta = PSWK_param[best_mean_ind][1]
 
         print("best eta: ", eta, '\nbest C: ', best_C)
-        # gram_SW_balanced_train = np.exp(- full50sp_matrix[balanced_train_index, :][:, balanced_train_index] / (2 * eta**2))
-        # classifier = SVC(kernel='precomputed', C=best_C, cache_size=1000)
         classifier = SVC(kernel=PSWK, C=best_C, cache_size=1000)
         classifier.fit(X_balanced_train, y_balanced_train)
 
