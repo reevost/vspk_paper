@@ -133,8 +133,7 @@ for rand_state in program:
             clf = SVC(kernel=PSSK, C=C, cache_size=1000)
             clf.fit(X_train, y_train)
             y_pred = clf.predict(X_test)
-            cm = confusion_matrix(y_test, y_pred, labels=[0, 1])
-            f1s = f1_score(cm)
+            f1s = f1_score(y_test, y_pred, average='macro')
             # as loss function can be used also the rmse
             # root_mse = np.sqrt(mean_squared_error(y_test, y_pred))
             # metric_output.append(root_mse)
@@ -163,8 +162,8 @@ for rand_state in program:
 
     report['t_train'] = report['t_train'] + [toc_mid3 - toc_mid2]
     report['t_val'] = report['t_val'] + [toc_mid4 - toc_mid3]
-    report['f1_score'] = report['f1_score'] + [f1_score(confusion_matrix(y_balanced_test, y_pred, labels=[0, 1]))]
-    report['accuracy'] = report['accuracy'] + [accuracy(confusion_matrix(y_balanced_test, y_pred, labels=[0, 1]))]
+    report['f1_score'] = report['f1_score'] + [f1_score(y_balanced_test, y_pred, average='macro')]
+    report['accuracy'] = report['accuracy'] + [accuracy_score(y_balanced_test, y_pred)]
 
 # print(report)
 print('-----------------------------------------------------------------------------------')
