@@ -36,17 +36,16 @@ coefficient_r_list = [2.5, 3.5, 4.0, 4.1, 4.3]
 # r_ind = 4  # parameter of the system
 # r = coefficient_r_list[r_ind]
 #
-# for i in np.arange(5):
+# for i in np.arange(50):
 #     x_0_y_0 = starting_points[i]
 #     dynamic_point_list = [x_0_y_0]
 #     for n in np.arange(1000):
 #         x_n_plus_1 = (dynamic_point_list[-1][0] + r * dynamic_point_list[-1][1] * (1 - dynamic_point_list[-1][1])) % 1
-#         # y_n_plus_1 = (dynamic_point_list[-1][1] + r * dynamic_point_list[-1][0] * (1 - dynamic_point_list[-1][0])) % 1
 #         y_n_plus_1 = (dynamic_point_list[-1][1] + r * x_n_plus_1 * (1 - x_n_plus_1)) % 1
 #         dynamic_point_list += [[x_n_plus_1, y_n_plus_1]]
 #     dynamic_df.loc[i] = [x_0_y_0, np.array(dynamic_point_list)]
 #
-# for i in np.arange(5):
+# for i in np.arange(50):
 #     fig = plt.figure(i+1)
 #     ax = fig.add_subplot()
 #     ax.scatter(dynamic_df["dynamic points"][i][:, 0], dynamic_df["dynamic points"][i][:, 1])
@@ -56,7 +55,7 @@ coefficient_r_list = [2.5, 3.5, 4.0, 4.1, 4.3]
 # # BUILD PERSISTENCE DIAGRAMS (AND SAVE THEM)
 # dict_sub_dict = {}
 #
-# for i in np.arange(100):
+# for i in np.arange(50):
 #     toc = time.perf_counter()
 #
 #     dynamic_data_array = dynamic_df["dynamic points"][i]
@@ -64,16 +63,14 @@ coefficient_r_list = [2.5, 3.5, 4.0, 4.1, 4.3]
 #     rips_structure_tree = rips_complex.create_simplex_tree(max_dimension=2)
 #     persistence_diagrams = rips_structure_tree.persistence(min_persistence=-1)
 #     print("the time needed to compute iteration %d is %f" % (i, time.perf_counter()-toc))
-#     if plot_flag:
-#         ax = gh.plot_persistence_diagram(persistence=persistence_diagrams, legend=True)
-#         ax.set_title("Persistence of case %d" % i)
-#         ax.set_aspect("equal")  # forces to be square shaped
-#         plt.show()
+#     ax = gh.plot_persistence_diagram(persistence=persistence_diagrams, legend=True)
+#     ax.set_title("Persistence of case %d" % i)
+#     ax.set_aspect("equal")  # forces to be square shaped
+#     plt.show()
 #     persistence_diagrams_savable = []
 #     for dp in persistence_diagrams:
 #         persistence_diagrams_savable += [[dp[0], dp[1][0], dp[1][1]]]
-#     print("len of pd", len(persistence_diagrams_savable))
-#     np.save(r'%s/dynamic_diagrams_2/%s_d%s.npy' % (cwd, r_ind, i), np.array(persistence_diagrams_savable))
+#     np.save(r'%s/dynamic_diagrams/%s_d%s.npy' % (cwd, r_ind, i), np.array(persistence_diagrams_savable))
 
 # LOAD OF PERSISTENCE DIAGRAMS
 main = pd.DataFrame(columns=['persistence diagram points', 'y'])
