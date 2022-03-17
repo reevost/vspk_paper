@@ -3,7 +3,7 @@
 
 #### Abstract
 
-In recent years, various kernels have been proposed in the context of per- sistent homology to deal with persistence diagrams in supervised learning ap- proaches. In this paper, we consider the idea of variably scaled kernels, for ap- proximating functions and data, and we interpret them in the framework of per- sistent homology. We call them Variably Scaled Persistence Kernels (VSPKs). These new kernels are then tested in different classification experiments. The obtained results show that they can improve the performance and the efficiency of existing standard kernels.
+In recent years, various kernels have been proposed in the context of persistent homology to deal with persistence diagrams in supervised learning approaches. In this paper, we consider the idea of variably scaled kernels, for approximating functions and data, and we interpret them in the framework of persistent homology. We call them Variably Scaled Persistence Kernels (VSPKs). These new kernels are then tested in different classification experiments. The obtained results show that they can improve the performance and the efficiency of existing standard kernels.
 Keywords: kernel-based learning; variably scaled persistence kernel; persistence diagrams; persistent homology
 
 
